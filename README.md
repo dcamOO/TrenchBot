@@ -2,9 +2,9 @@
 
 ## 👥 Equipe
 
-* **[Daniel Canton Alvim Moreira]** – Full
-* **[Thiago Felipe Alves do Carmo]** – Full
-* **[Gabriel Alves da Silva]** – Full 
+* **[Daniel Canton Alvim Moreira]** – Full Stack
+* **[Thiago Felipe Alves do Carmo]** – Full Stack
+* **[Gabriel Alves da Silva]** – Full Stack
 
 ## 🎯 Objetivo do Sistema
 
@@ -15,7 +15,7 @@ O **Trenchbot** é um agente autônomo de inteligência artificial projetado par
 * **Backend (Blockchain & Lógica Core):** Rust (para interação de altíssima performance com os *smart contracts* da Solana) e Python (para processamento de dados de mercado e lógica de IA).
 * **Frontend:** React.js com Tailwind CSS (para um painel de controle simples, rápido e responsivo).
 * **Banco de Dados:** PostgreSQL (para armazenamento estruturado do histórico de transações, logs e configurações do usuário).
-* **Agente de IA:** Google Gemini (Agente Integrado) para análise de anomalias em contratos, tomada de decisão em cenários de alta volatilidade e otimização de estratégias de trade.
+* **Agente de IA:** Google Gemini (Agente Integrado) para análise de anomalias em contratos, tomada de decisão em cenários de alta volatilidade e otimização de estratégias de trade. 
 
 ## 📝 Histórias de Usuário
 
