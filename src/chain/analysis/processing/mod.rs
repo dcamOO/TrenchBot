@@ -1,25 +1,23 @@
 mod findings;
 mod stats;
 
+use serde::Serialize;
 pub(crate) use findings::Finding;
 pub(crate) use stats::DerivedStats;
 
 use super::super::info::TokenInfo;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub(crate) struct ProcessedInfo {
     pub token: TokenInfo,
-    pub derived: DerivedStats,
     pub findings: Vec<Finding>,
 }
 
 pub(crate) fn process(token: TokenInfo) -> ProcessedInfo {
-    let derived = stats::calculate(&token);
-    let findings = findings::collect(&token, &derived);
+    let findings = findings::collect(&token);
 
     ProcessedInfo {
         token,
-        derived,
-        findings,
+        findings
     }
 }

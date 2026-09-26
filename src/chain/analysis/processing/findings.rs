@@ -5,29 +5,27 @@ use super::super::super::info::{
 };
 
 use super::DerivedStats;
+use serde::Serialize;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub(crate) struct Finding {
     pub category: FindingCategory,
     pub message: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub(crate) enum FindingCategory {
     Authority,
-    Distribution,
     Metadata,
     Token2022,
 }
 
 pub(crate) fn collect(
     info: &TokenInfo,
-    stats: &DerivedStats,
 ) -> Vec<Finding> {
     let mut findings = Vec::new();
 
     authorities(&info.mint_info, &mut findings);
-    distribution(stats, &mut findings);
     metadata(info.metadata.as_ref(), &mut findings);
     token_2022(&info.mint_info, &mut findings);
 
@@ -50,23 +48,6 @@ fn authorities(
             category: FindingCategory::Authority,
             message: "Freeze authority is configured.".into(),
         });
-    }
-}
-
-fn distribution(
-    stats: &DerivedStats,
-    findings: &mut Vec<Finding>,
-) {
-    if let Some(share) = stats.top_10_share {
-        if share >= 50.0 {
-            findings.push(Finding {
-                category: FindingCategory::Distribution,
-                message: format!(
-                    "The 10 largest token accounts hold {:.2}% of supply.",
-                    share
-                ),
-            });
-        }
     }
 }
 
