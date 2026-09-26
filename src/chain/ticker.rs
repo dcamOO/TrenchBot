@@ -15,10 +15,10 @@ struct Token {
     decimals: u8,
 }
 
-struct Asset {
-    ticker: String,
-    rpc: RpcClient,
-    mint: Pubkey,
+pub struct Asset {
+    pub(crate) ticker: String,
+    pub(crate) rpc: RpcClient,
+    pub(crate) mint: Pubkey,
 }
 
 impl Asset {
