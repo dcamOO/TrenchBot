@@ -1,10 +1,12 @@
 use anyhow::Result;
 use mpl_token_metadata::accounts::Metadata;
+use serde::Serialize;
+use solana_pubkey::Pubkey as MetadataPubkey;
 use solana_sdk::pubkey::Pubkey;
 
 use super::super::ticker::Asset;
 
-#[derive(Debug)]
+#[derive(Debug,Serialize)]
 pub(crate) struct MetadataInfo {
     pub name: String,
     pub symbol: String,
@@ -16,7 +18,7 @@ pub(crate) struct MetadataInfo {
     pub creators: Option<Vec<CreatorInfo>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug,Serialize)]
 pub(crate) struct CreatorInfo {
     pub address: String,
     pub verified: bool,
@@ -28,7 +30,7 @@ impl Asset {
         &self,
     ) -> Result<Option<MetadataInfo>> {
         let mint =
-            solana_program::pubkey::Pubkey::new_from_array(
+            MetadataPubkey::new_from_array(
                 self.mint.to_bytes(),
             );
 

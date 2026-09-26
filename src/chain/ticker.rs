@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
-use mpl_token_metadata::accounts::Metadata;
 use reqwest::blocking::Client;
 use serde::Deserialize;
 use solana_client::rpc_client::RpcClient;
@@ -22,7 +21,7 @@ pub struct Asset {
 }
 
 impl Asset {
-    fn new(ticker: &str, rpc_url: &str, jupiter_key: &str) -> Result<Self> {
+    pub(crate) fn new(ticker: &str, rpc_url: &str, jupiter_key: &str) -> Result<Self> {
         let rpc = Self::set_rpc_client(rpc_url);
         let mint = Self::find_mint(ticker, jupiter_key)?;
 
@@ -54,25 +53,5 @@ impl Asset {
             .ok_or_else(|| anyhow!("Ticker não encontrado: {ticker}"))?;
 
         Ok(Pubkey::from_str(&token.id)?)
-    }
-
-    fn get_metadata(&self) -> Result<Metadata> {
-        let metadata_program =
-            Pubkey::from_str("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s")?;
-
-        let (metadata_pda, _) = Pubkey::find_program_address(
-            &[
-                b"metadata",
-                metadata_program.as_ref(),
-                self.mint.as_ref(),
-            ],
-            &metadata_program,
-        );
-
-        let data = self.rpc.get_account_data(&metadata_pda)?;
-
-        let metadata = Metadata::safe_deserialize(&data)?;
-
-        Ok(metadata)
     }
 }

@@ -2,18 +2,18 @@ mod jupiter;
 mod metadata;
 mod mint;
 
-pub use jupiter::JupiterInfo;
-pub use metadata::MetadataInfo;
-pub use mint::MintInfo;
+pub(crate) use jupiter::{ JupiterInfo, Stats };
+pub(crate) use metadata::MetadataInfo;
+pub(crate) use mint::MintInfo;
 
 use anyhow::Result;
-use solana_client::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
+use serde::Serialize;
 
 use super::ticker::Asset;
 
-#[derive(Debug)]
-pub struct TokenInfo {
+#[derive(Debug, Serialize)]
+pub(crate) struct TokenInfo {
     pub mint: Pubkey,
     pub ticker: String,
 
@@ -27,6 +27,7 @@ impl Asset {
         let mint_info = self.get_mint_info()?;
         let metadata = self.get_metadata()?;
         let jupiter = self.get_jupiter_info(jupiter_key)?;
+
 
         Ok(TokenInfo {
             mint: self.mint,

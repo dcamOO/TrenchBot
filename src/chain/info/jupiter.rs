@@ -1,11 +1,9 @@
 use anyhow::{anyhow, Result};
 use reqwest::blocking::Client;
-use serde::Deserialize;
-use solana_sdk::pubkey::Pubkey;
-
+use serde::{ Deserialize, Serialize };
 use super::super::ticker::Asset;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct JupiterInfo {
     #[serde(rename = "usdPrice")]
     pub price_usd: Option<f64>,
@@ -39,7 +37,7 @@ pub(crate) struct JupiterInfo {
     pub stats_24h: Option<Stats>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct AuditInfo {
     #[serde(rename = "mintAuthorityDisabled")]
     pub mint_authority_disabled: Option<bool>,
@@ -51,7 +49,7 @@ pub(crate) struct AuditInfo {
     pub top_holders_percentage: Option<f64>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct FirstPoolInfo {
     #[serde(rename = "id")]
     pub address: String,
@@ -60,7 +58,7 @@ pub(crate) struct FirstPoolInfo {
     pub created_at: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct Stats {
     #[serde(rename = "priceChange")]
     pub price_change: Option<f64>,
