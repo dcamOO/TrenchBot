@@ -2,14 +2,14 @@ use anyhow::{Context, Result};
 use reqwest::blocking::Client;
 use serde::Serialize;
 
-pub struct Telegram {
+pub(crate) struct Telegram {
     client: Client,
     bot_token: String,
     chat_id: String,
 }
 
 #[derive(Debug)]
-pub enum TradeType {
+pub(crate) enum TradeType {
     Buy,
     Sell,
 }
@@ -36,7 +36,7 @@ struct TelegramResponse {
 }
 
 impl Telegram {
-    pub fn new(bot_token: String, chat_id: String) -> Self {
+    pub(crate) fn new(bot_token: String, chat_id: String) -> Self {
         Self {
             client: Client::new(),
             bot_token,
@@ -44,7 +44,7 @@ impl Telegram {
         }
     }
 
-    pub fn from_env() -> Result<Self> {
+    pub(crate) fn from_env() -> Result<Self> {
         let bot_token = std::env::var("TELEGRAM_BOT_TOKEN")
             .context("TELEGRAM_BOT_TOKEN not set")?;
 
@@ -54,7 +54,7 @@ impl Telegram {
         Ok(Self::new(bot_token, chat_id))
     }
 
-    pub fn send_message(&self, message: &str) -> Result<()> {
+    pub(crate) fn send_message(&self, message: &str) -> Result<()> {
         let url = format!(
             "https://api.telegram.org/bot{}/sendMessage",
             self.bot_token
@@ -85,7 +85,7 @@ impl Telegram {
         Ok(())
     }
 
-    pub fn send_trade_alert(
+    pub(crate) fn send_trade_alert(
         &self,
         side: TradeType,
         ticker: &str,
