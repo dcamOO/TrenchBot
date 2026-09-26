@@ -62,9 +62,9 @@ impl Asset {
         });
 
         Ok(Some(MetadataInfo {
-            name: metadata.name,
-            symbol: metadata.symbol,
-            uri: metadata.uri,
+            name: metadata.name.trim_matches('\0').trim().to_string(),
+            symbol: metadata.symbol.trim_matches('\0').trim().to_string(),
+            uri: metadata.uri.trim_matches('\0').trim().to_string(),
             update_authority: metadata.update_authority.to_string(),
             is_mutable: metadata.is_mutable,
             creators,
