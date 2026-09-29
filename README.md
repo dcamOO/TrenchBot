@@ -22,7 +22,7 @@ O **Trenchbot** é um agente autônomo de inteligência artificial projetado par
 1. **Como um investidor**, quero conectar minha carteira da Solana (ex: Phantom) ao painel do bot para que ele possa executar as ordens de trade com meus fundos de forma segura.
 2. **Como um usuário**, quero definir um limite de *stop-loss* e *take-profit* global para que o bot feche operações automaticamente e proteja meu capital.
 3. **Como um trader**, quero visualizar um dashboard em tempo real com as moedas que o bot está monitorando no momento para acompanhar as oportunidades de mercado identificadas pela IA.
-4. **Como um usuário**, quero configurar o bot para fazer compras automáticas (*sniping*) de tokens recém-lançados que atinjam um limite "X" de liquidez inicial, para entrar cedo no projeto.
+4. **Como um usuário**, quero configurar o bot para fazer compras automáticas (*sniping*) de tokens recém-lançados dos quais a carteria criadora tenha pelo menos 1 e não mais que x tokens lançados que superaram y de Market Cap ATH.
 5. **Como um investidor**, quero que o agente de IA escaneie automaticamente o contrato inteligente da *memecoin* buscando funções maliciosas (como *mint infinito* ou taxas abusivas) para evitar a compra de *scams*.
 6. **Como um trader**, quero receber alertas instantâneos no Telegram a cada operação de compra ou venda executada pelo bot para me manter informado sem precisar ficar olhando o painel.
 7. **Como um usuário**, quero definir um valor fixo de Solana (SOL) a ser gasto por transação para manter um gerenciamento de risco rigoroso e consistente.
