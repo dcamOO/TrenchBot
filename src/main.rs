@@ -17,6 +17,9 @@ use integration::telegram::{
 };
 
 fn main() -> Result<()> {
+    if TrenchBot::trading::cli::run()? {
+        return Ok(());
+    }
     println!("=== TrenchBot integration test ===");
 
     let ticker = std::env::var("TEST_TICKER")
