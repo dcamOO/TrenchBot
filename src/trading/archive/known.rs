@@ -1,6 +1,7 @@
 // Non-creation instructions from pump-fun/pump-public-docs/idl/pump.json (2026-09-29).
 // Unknown instructions fail closed until reviewed against a new IDL.
 pub const NON_CREATION: &[[u8; 8]] = &[
+    [228, 69, 165, 46, 81, 203, 154, 29], // Anchor EVENT_IX_TAG_LE (lang/src/event.rs)
     [2, 14, 61, 138, 170, 142, 14, 95],       // add_quote_control_mint
     [111, 121, 21, 56, 40, 24, 94, 209],      // add_quote_mint
     [125, 126, 214, 134, 77, 229, 188, 89],   // admin_cto
