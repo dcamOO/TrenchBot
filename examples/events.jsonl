@@ -1,0 +1,5 @@
+{"type":"launch","platform":"pump_fun","mint":"DEMO-A","creator":"DEMO-CREATOR","launched_at":1000,"observed_at":1010,"price_sol":0.001,"history":{"creator":"DEMO-CREATOR","complete":true,"tokens":[{"mint":"PRIOR-TOKEN","launched_at":100,"ath_market_cap_usd":2000000.0}]}}
+{"type":"price","mint":"DEMO-A","observed_at":1020,"price_sol":0.0012}
+{"type":"price","mint":"DEMO-A","observed_at":1030,"price_sol":0.0015}
+{"type":"launch","platform":"pump_fun","mint":"DEMO-B","creator":"DEMO-CREATOR","launched_at":1040,"observed_at":1050,"price_sol":0.001,"history":{"creator":"DEMO-CREATOR","complete":true,"tokens":[{"mint":"PRIOR-TOKEN","launched_at":100,"ath_market_cap_usd":2000000.0}]}}
+{"type":"price","mint":"DEMO-B","observed_at":1060,"price_sol":0.0008}
