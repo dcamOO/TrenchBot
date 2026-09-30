@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { SolanaWalletProvider } from './context/WalletContext';
 import { Header } from './components/Header';
 import { MetricsCards } from './components/MetricsCards';
 import { MonitoredTokensTable } from './components/MonitoredTokensTable';
 import { ActivePositionsTable } from './components/ActivePositionsTable';
 import { PnlHistoryTable } from './components/PnlHistoryTable';
+import { useSimulationFeed } from './hooks/useSimulationFeed';
 
 const INITIAL_CANDIDATES = [
   { mint: '7M9XbU5vK14q8sW93eRtYu23pLm', symbol: 'PEPE-PUMP', creator: '3aB8...9kLm', launchCount: 2, maxAllowed: 3, athProof: '$2.4M ATH', priceSol: 0.000045, ageSeconds: 14, aiStatus: 'safe' },
@@ -21,9 +22,19 @@ const INITIAL_TRADES = [
 ];
 
 function Dashboard() {
-  const [candidates] = useState(INITIAL_CANDIDATES);
-  const [positions, setPositions] = useState(INITIAL_POSITIONS);
-  const [trades, setTrades] = useState(INITIAL_TRADES);
+  const {
+    isSimulating,
+    toggleSimulation,
+    candidates,
+    positions,
+    trades,
+    setPositions,
+    setTrades,
+  } = useSimulationFeed({
+    candidates: INITIAL_CANDIDATES,
+    positions: INITIAL_POSITIONS,
+    trades: INITIAL_TRADES,
+  });
 
   const totalPnlSol = trades.reduce((acc, t) => acc + t.pnlSol, 0);
   const totalCost = trades.reduce((acc, t) => acc + t.costLamports, 0);
@@ -69,7 +80,12 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <Header onExportPnl={exportCsv} hasTrades={trades.length > 0} />
+      <Header
+        onExportPnl={exportCsv}
+        hasTrades={trades.length > 0}
+        isSimulating={isSimulating}
+        onToggleSimulation={toggleSimulation}
+      />
       <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-6">
         <MetricsCards metrics={{ totalPnlSol, totalPnlPercent, winRate, activeCount: positions.length, monitoredCount: candidates.length }} />
         <MonitoredTokensTable candidates={candidates} />
