@@ -16,3 +16,5 @@ mod orders;
 mod replay;
 #[path = "trading/risk.rs"]
 mod risk;
+#[path = "trading/pnl.rs"]
+mod pnl;
