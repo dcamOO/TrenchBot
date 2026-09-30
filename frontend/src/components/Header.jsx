@@ -1,8 +1,8 @@
 import React from 'react';
 import { useTrenchWallet } from '../context/WalletContext';
-import { Wallet, ShieldCheck, Download, Activity, LogOut } from 'lucide-react';
+import { Wallet, ShieldCheck, Download, Activity, LogOut, Play, Pause } from 'lucide-react';
 
-export const Header = ({ onExportPnl, hasTrades }) => {
+export const Header = ({ onExportPnl, hasTrades, isSimulating, onToggleSimulation }) => {
   const { isConnected, address, balanceSol, connectPaperWallet, disconnectWallet } = useTrenchWallet();
 
   const shortenAddress = (addr) => {
@@ -33,6 +33,21 @@ export const Header = ({ onExportPnl, hasTrades }) => {
 
         {/* Actions & Wallet */}
         <div className="flex items-center space-x-3">
+          {onToggleSimulation && (
+            <button
+              onClick={onToggleSimulation}
+              className={`flex items-center space-x-1.5 text-xs font-semibold px-3 py-2 rounded-lg border transition ${
+                isSimulating
+                  ? 'bg-amber-950/90 text-amber-300 border-amber-800 animate-pulse'
+                  : 'bg-emerald-950/90 text-emerald-300 border-emerald-800 hover:bg-emerald-900/80'
+              }`}
+              title={isSimulating ? "Pausar Simulação ao Vivo" : "Iniciar Demonstração ao Vivo"}
+            >
+              {isSimulating ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+              <span>{isSimulating ? "Pausar Demo" : "▶ Iniciar Simulação"}</span>
+            </button>
+          )}
+
           {onExportPnl && (
             <button
               onClick={onExportPnl}
