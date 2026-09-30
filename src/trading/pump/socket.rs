@@ -7,6 +7,16 @@ pub struct Feed {
 }
 
 impl Feed {
+    pub fn enable_polling(&mut self) -> Result<()> {
+        let timeout = Some(std::time::Duration::from_millis(250));
+        match self.socket.get_mut() {
+            MaybeTlsStream::Plain(stream) => stream.set_read_timeout(timeout)?,
+            MaybeTlsStream::Rustls(stream) => stream.sock.set_read_timeout(timeout)?,
+            _ => anyhow::bail!("transporte sem suporte a polling"),
+        }
+        Ok(())
+    }
+
     pub fn connect(api_key: &str, positions: &HashSet<String>) -> Result<Self> {
         let mut url = reqwest::Url::parse("wss://pumpportal.fun/api/data")?;
         url.query_pairs_mut().append_pair("api-key", api_key);
