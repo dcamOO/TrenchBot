@@ -37,7 +37,9 @@ cargo test
 cargo run -- --paper examples/trading.json examples/events.jsonl
 # Para consumir continuamente eventos JSONL pela entrada padrão:
 cargo run -- --paper examples/trading.json -
-# Descoberta ao vivo pump.fun e ordens simuladas (requer PUMPPORTAL_API_KEY):
+# Histórico completo de deployments pump.fun (requer HELIUS_API_KEY):
+cargo run -- --scan-creator examples/trading.json CARTEIRA_SOLANA
+# Descoberta ao vivo e ordens simuladas (HELIUS_API_KEY + PUMPPORTAL_API_KEY):
 cargo run -- --pump-paper examples/trading.json examples/histories.json
 ```
 
@@ -53,7 +55,7 @@ Edite `examples/trading.json` ou forneça outro arquivo:
 | `take_profit_percent` | Percentual de ganho por posição, positivo. |
 | `sol_per_trade` | Valor fixo por compra em SOL, como string decimal (`"0.1"`), com até 9 casas; convertido exatamente em lamports. |
 | `sniping_enabled` | Habilita novas compras; desabilitá-lo mantém as saídas automáticas. |
-| `max_creator_launches` | X: máximo de **todos** os tokens lançados pela carteira, incluindo o candidato, independentemente do ATH. |
+| `max_creator_launches` | X: máximo de tokens lançados pela carteira **na pump.fun**, incluindo o candidato, independentemente do ATH. |
 | `min_ath_market_cap_usd` | Y em USD: pelo menos um token anterior deve ter ATH estritamente maior que Y. |
 | `max_launch_age_seconds` | Idade máxima inclusiva do lançamento em relação ao instante de observação. |
 
@@ -67,17 +69,19 @@ Cada compra usa o mesmo valor nominal em lamports. Saldo insuficiente impede a o
 
 `Event::Launch` recebe `platform` (apenas `pump_fun` é aceito), mint, carteira que realizou o lançamento, timestamps Unix em segundos, preço em SOL por token e histórico de deployments/ATH. `Event::Price` recebe mint, timestamp e preço em SOL; cotações fora de ordem são ignoradas. Veja o contrato JSON em `examples/events.jsonl`. Os identificadores `DEMO-*` são fictícios.
 
-Um adaptador de dados real deverá verificar a carteira que efetivamente criou o token, obter todo o histórico (inclusive paginação), fornecer ATH em USD e produzir eventos recentes. Os campos atuais de metadata/Jupiter não fornecem esse histórico e não são usados para inferi-lo. Em replay histórico, o provedor deve fornecer somente dados conhecidos naquele momento.
+O adaptador histórico verifica deployments pump.fun pelo RPC archival da Helius. ATH em USD continua sendo fornecido separadamente, pelo arquivo de históricos. Os campos atuais de metadata/Jupiter não fornecem esse histórico e não são usados para inferi-lo. Em replay histórico, o provedor deve fornecer somente dados conhecidos naquele momento.
 
 `Broker` separa as regras da execução. Um adaptador real deverá assinar/enviar swaps, usar o valor exato solicitado e retornar apenas fills confirmados, com a quantidade efetivamente recebida. Erros devem significar que nenhuma operação ocorreu; resultados ambíguos precisam ser reconciliados pelo adaptador antes de retornar. Ordens com erro preservam o estado para nova tentativa. Tokens comprados não são recomprados na mesma sessão, mesmo após a venda.
 
-Posições, tokens comprados e carteiras descartadas ficam em memória nesta versão. O modo de simulação começa uma sessão nova a cada execução. Persistência e reconciliação com a carteira, além dos adaptadores de dados e swaps, ainda são necessárias para operação real.
+Posições e tokens comprados ficam em memória nesta versão. O cache SQLite preserva deployments confirmados, progresso das consultas e consumo diário; carteiras acima de X são rejeitadas novamente usando esse cache após reiniciar. O saldo simulado começa uma sessão nova a cada execução. Persistência de posições, reconciliação com a carteira, fonte automática de ATH e execução de swaps ainda são necessárias para operação real.
 
 ### WebSocket pump.fun
 
-`--pump-paper` usa uma única conexão com `wss://pumpportal.fun/api/data`, assina `subscribeNewToken` e aceita somente eventos `pool: "pump"`. Ao abrir uma posição simulada, assina `subscribeTokenTrade` no mesmo socket; após a venda, cancela essa assinatura. A carteira criadora vem de `traderPublicKey` exclusivamente em eventos `txType: "create"`; compradores posteriores não são tratados como criadores. O preço estimado usa a razão entre reservas virtuais SOL/token.
+`--pump-paper` usa uma única conexão com `wss://pumpportal.fun/api/data`, assina `subscribeNewToken` e aceita somente eventos `pool: "pump"`. `traderPublicKey` em um evento `create` inicia a consulta; a atribuição do deployment é verificada no RPC. Compradores posteriores não são tratados como criadores. O preço estimado usa a razão entre reservas virtuais SOL/token.
 
-A conexão é refeita com espera progressiva até 30 segundos, repondo as assinaturas das posições abertas. Qualquer reconexão invalida a completude dos históricos: novas compras ficam bloqueadas, mas o monitoramento das posições existentes continua. Para voltar a comprar, inicie outra sessão com histórico atualizado. Nenhuma chave aparece nos logs de conexão.
+A consulta histórica roda em uma thread separada, com no máximo 16 candidatos pendentes, sem bloquear o processamento dos preços de posições abertas. Somente após verificar deployments e ATH, o bot assina os trades do candidato e espera uma cotação nova para simular a entrada. Candidatos expirados ou recusados têm a assinatura cancelada; posições abertas continuam monitoradas até a venda.
+
+A conexão é refeita com espera progressiva até 30 segundos, repondo as assinaturas das posições abertas. Reconexões invalidam candidatos pendentes, inclusive respostas históricas que chegarem depois. Um novo deployment observado da mesma carteira também invalida candidatos anteriores. Novos candidatos passam novamente pela consulta incremental. Nenhuma chave aparece nos logs de conexão.
 
 O arquivo de históricos é um objeto indexado pela carteira criadora:
 
@@ -93,8 +97,34 @@ O arquivo de históricos é um objeto indexado pela carteira criadora:
 }
 ```
 
-Esse snapshot deve ser completo e atualizado no início da sessão, fornecido por uma fonte confiável. Carteiras ausentes recebem histórico incompleto e não são aprovadas. Novos deployments observados se acumulam, inclusive os rejeitados, sem contar mensagens repetidas duas vezes. Seus ATHs em USD não são inferidos do preço atual; apenas o snapshot fornece sucessos comprovados. O exemplo `histories.json` está vazio propositalmente e não permite compras.
+No modo ao vivo, esse arquivo fornece apenas a evidência de ATH, de uma fonte confiável. O campo `complete` e os timestamps do arquivo não comprovam deployments: contagem, criador e datas vêm do RPC. Cada token anterior enumerado precisa ter ATH disponível no arquivo; ausência ou valores inválidos bloqueiam a compra. Não se infere ATH usando o preço atual. O exemplo `histories.json` está vazio propositalmente e não permite compras.
 
 O WebSocket fornece dados ao vivo, não o histórico de deployments/ATH ([FAQ do provedor](https://pumpportal.fun/FAQ/)). Além disso, assinaturas de trades exigem chave e têm cobrança do provedor, mesmo com ordens simuladas ([preços](https://pumpportal.fun/fees/)). A descoberta de novos tokens é gratuita.
 
-O adaptador cobre a curva pump.fun; preços após migração para PumpSwap ainda não são tratados. O instante de recebimento é usado como timestamp do evento ao vivo. O stream é `processed`, não uma confirmação final de blockchain. Esses limites, a ausência de persistência e os fills simulados impedem tratar esse modo como execução real de produção.
+O adaptador cobre a curva pump.fun; preços após migração para PumpSwap ainda não são tratados. O stream é `processed`; o scanner exige encontrar o deployment em histórico `finalized` antes de liberar o candidato. Sua data de lançamento vem do bloco; a observação de preço usa o instante de recebimento. Esses limites, posições apenas em memória e fills simulados impedem tratar esse modo como execução real de produção.
+
+### Consulta histórica e controle de custo
+
+Defina `HELIUS_API_KEY` no ambiente. O endpoint é fixo no archival mainnet da Helius; um RPC público com histórico podado não pode comprovar a contagem. O comando `--scan-creator CONFIG.json CARTEIRA` imprime JSON com `complete`, `over_limit` e os deployments encontrados. Ele não compra nem consulta ATH. Pode ser usado para preparar o cache antes de acompanhar uma carteira ao vivo.
+
+| Variável | Padrão | Uso |
+| --- | --- | --- |
+| `ARCHIVE_DB` | `creator-history.sqlite` | Cache SQLite compartilhado pelo scanner e modo ao vivo. |
+| `ARCHIVE_DAILY_REQUESTS` | `25000` | Máximo de tentativas RPC por dia UTC, persistido no mesmo banco. |
+| `HELIUS_API_KEY` | Sem padrão | Chave de acesso ao histórico archival mainnet. |
+
+O scanner pagina `getSignaturesForAddress` e busca as transações com `getTransaction`, ambos com compromisso `finalized`. Decodifica `create` e `create_v2`, inclusive chamadas internas (CPI), e atribui cada mint ao campo `user` da instrução de criação. Esse critério identifica quem realizou o deployment, não o beneficiário mutável das taxas, o pagador genérico da transação ou quem possui o token hoje. A contagem inclui tokens sem sucesso, migrados e não mais presentes nas listas atuais de ativos, mas exclui outras plataformas e transações que falharam.
+
+- Ao confirmar mais de X mints distintos, encerra a consulta. O cache basta para rejeitar essa carteira nas próximas vezes, sem novas requisições.
+- Para comprovar até X, precisa esgotar o histórico archival. Uma página curta não é tratada como fim: consulta a página seguinte até receber uma lista vazia.
+- Após completar a primeira varredura, guarda a assinatura mais recente como âncora e examina somente transações novas. A âncora precisa ser encontrada; sua ausência não autoriza compras.
+- Deployments e cursor são gravados atomicamente por transação. Consultas interrompidas retomam do cursor e, ao terminar, atualizam os eventos ocorridos durante a interrupção. Aumentar X permite retomar uma carteira anteriormente rejeitada pelo limite menor.
+- Dados ausentes, CPI não disponível, instruções pump desconhecidas, erro RPC ou orçamento esgotado mantêm a verificação incompleta. Não há fallback para listas parciais de tokens.
+
+Uma carteira com poucos deployments pode ter muitas transações. Nesse caso, a primeira varredura ainda pode ser longa. No modo ao vivo, o prazo do candidato limita o trabalho; se a consulta não terminar a tempo, o bot ignora a oportunidade e preserva o progresso. A fila cheia também ignora candidatos, sem aprová-los com informação parcial. A confirmação final adiciona latência ao sniping.
+
+Há intervalo mínimo de 150 ms entre requisições do worker. O orçamento conta tentativas antes de enviá-las, inclusive erros, e continua valendo após reiniciar. O limite é local ao banco: outras aplicações, chaves compartilhadas e bancos diferentes não entram nessa contagem. Apagar o banco apaga também o histórico de consumo. Evite habilitar cobrança automática adicional no provedor se desejar permanecer apenas na franquia gratuita.
+
+Em 29/09/2026, a Helius documenta 1 crédito por chamada archival desses dois métodos e 1 milhão de créditos mensais no plano gratuito. O padrão de 25 mil tentativas/dia consome no máximo 775 mil em 31 dias, reservando margem; não cobre gastos com PumpPortal nem outras aplicações. Consulte os [créditos da Helius](https://www.helius.dev/docs/billing/credits) para preços vigentes.
+
+Referências: [histórico archival Helius](https://www.helius.dev/historical-data), [paginação Solana](https://solana.com/docs/rpc/http/getsignaturesforaddress), [getTransaction](https://solana.com/docs/rpc/http/gettransaction), [IDL oficial pump.fun](https://github.com/pump-fun/pump-public-docs/blob/main/idl/pump.json). O decoder está fixado nas instruções revisadas em 29/09/2026; atualizações de programa podem exigir revisão antes de continuar.
