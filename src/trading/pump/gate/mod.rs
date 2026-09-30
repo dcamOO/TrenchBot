@@ -1,5 +1,11 @@
+#[cfg(test)]
+mod event_tests;
 mod events;
+#[cfg(test)]
+mod poll_tests;
 mod polling;
+#[cfg(test)]
+mod test_support;
 
 use super::history::Histories;
 use crate::trading::{
