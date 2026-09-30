@@ -9,6 +9,10 @@ pub fn run() -> Result<bool> {
     if args.is_empty() {
         return Ok(false);
     }
+    if args.first().map(String::as_str) == Some("--demo") {
+        super::demo::run_demo()?;
+        return Ok(true);
+    }
     if args.first().map(String::as_str) == Some("--export-pnl") {
         ensure!(
             args.len() == 4,

@@ -1,1 +1,1 @@
-pub(crate) mod telegram;
+pub mod telegram;

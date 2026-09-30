@@ -1,5 +1,5 @@
 mod chain;
-mod integration;
+use TrenchBot::integration;
 
 use anyhow::Result;
 
