@@ -1,6 +1,7 @@
 pub mod archive;
 pub mod cli;
 mod config;
+pub mod demo;
 mod engine;
 pub mod paper;
 pub mod pnl;
