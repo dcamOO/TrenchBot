@@ -28,6 +28,14 @@ O **Trenchbot** é um agente autônomo de inteligência artificial projetado par
 7. **Como um usuário**, quero definir um valor fixo de Solana (SOL) a ser gasto por transação para manter um gerenciamento de risco rigoroso e consistente.
 8. **Como um investidor**, quero poder exportar um relatório do meu histórico de Lucro e Perda (PNL) a qualquer momento para conferir meus rendimentos e facilitar minha declaração de impostos.
 
+## 📐 Diagramas de Arquitetura (UML)
+
+### Diagrama de Classes
+![Diagrama de Classes](diagrama_classes.svg)
+
+### Diagrama de Sequência
+![Diagrama de Sequência](diagrama_sequencia.svg)
+
 ## Motor de trading e simulação
 
 As regras das histórias 2, 4 e 7 estão disponíveis em `src/trading`, com configuração JSON, replay local e descoberta ao vivo pelo WebSocket do PumpPortal. **As ordens são simuladas**: não conecta carteira nem envia swaps reais. Apenas lançamentos pump.fun são candidatos. O fluxo anterior de análise continua disponível ao executar sem argumentos.
