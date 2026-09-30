@@ -18,3 +18,5 @@ mod replay;
 mod risk;
 #[path = "trading/pnl.rs"]
 mod pnl;
+#[path = "trading/demo.rs"]
+mod demo;
