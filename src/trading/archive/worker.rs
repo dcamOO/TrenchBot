@@ -53,6 +53,14 @@ impl Worker {
                             );
                             if report.tokens.iter().any(|d| d.mint == launch.mint) {
                                 enrich(&mut launch, report, &ath.0)?;
+                                ensure!(
+                                    launch.history.tokens.iter().any(|token| token.mint
+                                        != launch.mint
+                                        && token.launched_at < launch.launched_at
+                                        && token.ath_market_cap_usd
+                                            > config.min_ath_market_cap_usd),
+                                    "criador sem lançamento anterior com ATH acima de Y"
+                                );
                                 return Ok(launch);
                             }
                             // The stream is processed; wait for finality before trusting a launch.
