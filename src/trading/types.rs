@@ -46,6 +46,7 @@ pub struct Position {
     pub mint: String,
     pub quantity: f64,
     pub cost_lamports: u64,
+    pub opened_at: u64,
     pub last_observed_at: u64,
 }
 

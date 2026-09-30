@@ -41,6 +41,7 @@ impl<B: Broker> Engine<B> {
                 mint: launch.mint.clone(),
                 quantity,
                 cost_lamports: spent,
+                opened_at: launch.observed_at,
                 last_observed_at: launch.observed_at,
             },
         );

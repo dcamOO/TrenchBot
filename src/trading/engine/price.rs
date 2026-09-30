@@ -29,6 +29,14 @@ impl<B: Broker> Engine<B> {
         };
         if let Some(reason) = reason {
             let received = self.broker.sell(mint, position.quantity, price_sol)?;
+            self.pnl_records.push(PnlRecord::new(
+                mint.into(),
+                position.opened_at,
+                observed_at,
+                position.cost_lamports,
+                received,
+                reason.into(),
+            ));
             self.positions.remove(mint);
             Ok(Outcome::Sold {
                 mint: mint.into(),

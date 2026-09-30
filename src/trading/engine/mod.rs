@@ -2,7 +2,7 @@ mod history;
 mod launch;
 mod price;
 
-use super::{TradingConfig, types::*};
+use super::{TradingConfig, pnl::PnlRecord, types::*};
 use anyhow::Result;
 use std::collections::{HashMap, HashSet};
 
@@ -12,6 +12,7 @@ pub struct Engine<B> {
     positions: HashMap<String, Position>,
     bought: HashSet<String>,
     discarded_creators: HashSet<String>,
+    pnl_records: Vec<PnlRecord>,
 }
 
 fn skipped(reason: &str) -> Outcome {
@@ -29,11 +30,16 @@ impl<B: Broker> Engine<B> {
             positions: HashMap::new(),
             bought: HashSet::new(),
             discarded_creators: HashSet::new(),
+            pnl_records: Vec::new(),
         })
     }
 
     pub fn positions(&self) -> &HashMap<String, Position> {
         &self.positions
+    }
+
+    pub fn pnl_records(&self) -> &[PnlRecord] {
+        &self.pnl_records
     }
 
     /// Reconfiguration applies to every open position as well as future buys.
