@@ -1,5 +1,6 @@
 //! Persistent pump.fun deployment history from Helius archival mainnet RPC.
 mod budget;
+pub mod cli;
 pub mod decode;
 mod known;
 pub mod model;

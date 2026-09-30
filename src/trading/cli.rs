@@ -3,6 +3,9 @@ use anyhow::{Context, Result, ensure};
 
 pub fn run() -> Result<bool> {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    if super::archive::cli::run(&args)? {
+        return Ok(true);
+    }
     if args.is_empty() {
         return Ok(false);
     }
