@@ -1,10 +1,12 @@
 mod execute;
+mod gate;
 pub mod history;
 pub mod message;
 mod socket;
 
 use super::{Engine, Event, TradingConfig, paper::PaperBroker};
 use anyhow::Result;
+use gate::Gate;
 use history::Histories;
 use message::PumpMessage;
 use socket::Feed;
@@ -16,12 +18,8 @@ use std::{
 use tungstenite::Message;
 
 /// Live PumpPortal data, simulated fills. Uses one connection for all subscriptions.
-pub fn run(
-    config: TradingConfig,
-    mut histories: Histories,
-    api_key: &str,
-    balance: u64,
-) -> Result<()> {
+pub fn run(config: TradingConfig, histories: Histories, api_key: &str, balance: u64) -> Result<()> {
+    let mut gate = Gate::new(config.clone(), histories)?;
     let mut engine = Engine::new(
         config,
         PaperBroker {
@@ -33,14 +31,15 @@ pub fn run(
     loop {
         let positions: HashSet<_> = engine.positions().keys().cloned().collect();
         if reconnecting {
-            histories.invalidate();
+            gate.invalidate();
         }
         reconnecting = true;
         match Feed::connect(api_key, &positions) {
             Ok(mut feed) => {
+                feed.enable_polling()?;
                 eprintln!("PumpPortal conectado; ordens SIMULADAS.");
-                if session(&mut feed, &mut engine, &mut histories).is_err() {
-                    eprintln!("Conexão interrompida; histórico invalidado para novas compras.");
+                if session(&mut feed, &mut engine, &mut gate).is_err() {
+                    eprintln!("Conexão interrompida; candidatos pendentes invalidados.");
                 }
             }
             Err(_) => eprintln!("PumpPortal indisponível; tentando novamente."),
@@ -50,13 +49,22 @@ pub fn run(
     }
 }
 
-fn session(
-    feed: &mut Feed,
-    engine: &mut Engine<PaperBroker>,
-    histories: &mut Histories,
-) -> Result<()> {
+fn session(feed: &mut Feed, engine: &mut Engine<PaperBroker>, gate: &mut Gate) -> Result<()> {
     loop {
-        let text = match feed.socket.read()? {
+        let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+        gate.poll(now, |method, keys| feed.subscribe(method, keys))?;
+        let incoming = match feed.socket.read() {
+            Err(tungstenite::Error::Io(error))
+                if matches!(
+                    error.kind(),
+                    std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+                ) =>
+            {
+                continue;
+            }
+            other => other?,
+        };
+        let text = match incoming {
             Message::Text(text) => text,
             Message::Close(_) => anyhow::bail!("conexão encerrada"),
             Message::Ping(_) => {
@@ -75,8 +83,11 @@ fn session(
             let Some(message) = PumpMessage::parse(&text)? else {
                 return Ok(None);
             };
+            if message.tx_type == "create" && engine.positions().contains_key(&message.mint) {
+                return Ok(None);
+            }
             let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-            Ok(Some(histories.event(message, now)?))
+            gate.event(message, now)
         })();
         match result {
             Ok(Some(event)) => execute::execute(feed, engine, event)?,

@@ -1,9 +1,12 @@
 use super::Gate;
-use crate::trading::pump::socket::Feed;
 use anyhow::Result;
 
 impl Gate {
-    pub fn poll(&mut self, feed: &mut Feed, now: u64) -> Result<()> {
+    pub fn poll(
+        &mut self,
+        now: u64,
+        mut subscribe: impl FnMut(&str, &[String]) -> Result<()>,
+    ) -> Result<()> {
         while let Ok((mint, result)) = self.worker.results.try_recv() {
             self.pending.remove(&mint);
             if self.invalidated.remove(&mint) {
@@ -15,14 +18,14 @@ impl Gate {
                         && now - launch.launched_at <= self.config.max_launch_age_seconds =>
                 {
                     // Pay for trade data only after history and ATH checks have passed.
-                    feed.subscribe("subscribeTokenTrade", std::slice::from_ref(&mint))?;
+                    subscribe("subscribeTokenTrade", std::slice::from_ref(&mint))?;
                     self.ready.insert(mint, launch);
                 }
                 Ok(_) => eprintln!("Candidato expirou durante verificação histórica: {mint}"),
                 Err(error) => eprintln!("Candidato {mint} ignorado: {error}"),
             }
         }
-        let expired: Vec<_> = self
+        let mut expired: Vec<_> = self
             .ready
             .iter()
             .filter(|(_, launch)| {
@@ -31,10 +34,17 @@ impl Gate {
             })
             .map(|(mint, _)| mint.clone())
             .collect();
+        for (mint, launch) in &self.ready {
+            if self.db.tokens(&launch.creator)?.len() > self.config.max_creator_launches
+                && !expired.contains(mint)
+            {
+                expired.push(mint.clone());
+            }
+        }
         for mint in expired {
             self.ready.remove(&mint);
             self.invalidated.remove(&mint);
-            feed.subscribe("unsubscribeTokenTrade", &[mint])?;
+            subscribe("unsubscribeTokenTrade", &[mint])?;
         }
         Ok(())
     }

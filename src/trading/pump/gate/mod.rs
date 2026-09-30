@@ -32,7 +32,8 @@ impl Gate {
     }
 
     pub fn invalidate(&mut self) {
-        self.invalidated.retain(|mint| self.pending.contains_key(mint));
+        self.invalidated
+            .retain(|mint| self.pending.contains_key(mint));
         self.invalidated.extend(self.pending.keys().cloned());
         self.ready.clear();
     }
