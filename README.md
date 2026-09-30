@@ -35,6 +35,8 @@ As regras das histórias 2, 4 e 7 estão disponíveis em `src/trading`, com conf
 ```sh
 cargo test
 cargo run -- --paper examples/trading.json examples/events.jsonl
+# Exportar relatório de PnL em CSV (US8):
+cargo run -- --export-pnl examples/trading.json examples/events.jsonl pnl_relatorio.csv
 # Para consumir continuamente eventos JSONL pela entrada padrão:
 cargo run -- --paper examples/trading.json -
 # Histórico completo de deployments pump.fun (requer HELIUS_API_KEY):
@@ -42,6 +44,19 @@ cargo run -- --scan-creator examples/trading.json CARTEIRA_SOLANA
 # Descoberta ao vivo e ordens simuladas (HELIUS_API_KEY + PUMPPORTAL_API_KEY):
 cargo run -- --pump-paper examples/trading.json examples/histories.json
 ```
+
+## Painel de Controle e Conexão de Carteira (US1, US3, US8)
+
+O painel de controle em React + Tailwind CSS está disponível em `frontend/`:
+
+```sh
+npm --prefix frontend install
+npm --prefix frontend run dev
+```
+
+* **Conexão com Carteira Phantom (US1):** Suporte à carteira Solana (Phantom) via `@solana/wallet-adapter` com saldo e endereço do investidor.
+* **Dashboard em Tempo Real (US3):** Visualização reativa com cards de PnL e Win Rate, tabela de tokens monitorados com status de criador (X/Y) e parecer de scam da IA Gemini, além de posições abertas com metas de TP e SL.
+* **Exportação de PnL (US8):** Geração e download imediato do relatório de Lucro e Perda (CSV) diretamente pelo painel ou via CLI.
 
 O exemplo compra dois tokens, fecha um por take-profit e outro por stop-loss. A saída contém um resultado JSON por evento. Erros de evento/ordem são reportados e o processamento continua, permitindo avaliar saídas posteriores. Configuração inválida interrompe a inicialização. O saldo inicial simulado é 10 SOL, alterável por `PAPER_BALANCE_LAMPORTS` (inteiro).
 
