@@ -18,6 +18,9 @@ pub fn execute(feed: &mut Feed, engine: &mut Engine<PaperBroker>, event: Event) 
     match outcome {
         Ok(outcome) => {
             println!("{}", serde_json::to_string(&outcome)?);
+            if let Outcome::Bought { ref mint, .. } = outcome {
+                feed.subscribe("subscribeTokenTrade", std::slice::from_ref(mint))?;
+            }
             if let Outcome::Sold { mint, .. } = outcome {
                 feed.subscribe("unsubscribeTokenTrade", &[mint])?;
             }

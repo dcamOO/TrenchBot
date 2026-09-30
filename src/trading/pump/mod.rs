@@ -1,8 +1,9 @@
+mod execute;
 pub mod history;
 pub mod message;
 mod socket;
 
-use super::{Engine, Outcome, TradingConfig, paper::PaperBroker};
+use super::{Engine, Event, TradingConfig, paper::PaperBroker};
 use anyhow::Result;
 use history::Histories;
 use message::PumpMessage;
@@ -70,26 +71,15 @@ fn session(
             value.get("errors").is_none() && value.get("error").is_none(),
             "assinatura recusada"
         );
-        let result = (|| -> Result<Option<Outcome>> {
+        let result = (|| -> Result<Option<Event>> {
             let Some(message) = PumpMessage::parse(&text)? else {
                 return Ok(None);
             };
             let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-            Ok(Some(engine.handle(histories.event(message, now)?)?))
+            Ok(Some(histories.event(message, now)?))
         })();
         match result {
-            Ok(Some(outcome)) => {
-                println!("{}", serde_json::to_string(&outcome)?);
-                match outcome {
-                    Outcome::Bought { mint, .. } => {
-                        feed.subscribe("subscribeTokenTrade", &[mint])?
-                    }
-                    Outcome::Sold { mint, .. } => {
-                        feed.subscribe("unsubscribeTokenTrade", &[mint])?
-                    }
-                    _ => {}
-                }
-            }
+            Ok(Some(event)) => execute::execute(feed, engine, event)?,
             Ok(None) => {}
             Err(error) => eprintln!("Evento ignorado: {error}"),
         }
