@@ -48,3 +48,25 @@ fn formats_pnl_csv_properly() {
     assert!(lines[1].contains("MINT1,100,200,100000000,110000000,10000000,0.010000,10.00,take_profit"));
     assert!(lines[2].contains("MINT2,300,400,100000000,90000000,-10000000,-0.010000,-10.00,stop_loss"));
 }
+
+#[test]
+fn engine_records_pnl_on_closed_trades() {
+    use super::common::*;
+    let mut engine = engine();
+    engine.handle(Event::Launch(launch(1))).unwrap();
+    assert_eq!(engine.positions().len(), 1);
+    assert_eq!(engine.pnl_records().len(), 0);
+
+    let outcome = engine.handle(price("new-token", 0.0015, 1020)).unwrap();
+    assert!(matches!(outcome, Outcome::Sold { .. }));
+    assert_eq!(engine.positions().len(), 0);
+    assert_eq!(engine.pnl_records().len(), 1);
+
+    let record = &engine.pnl_records()[0];
+    assert_eq!(record.mint, "new-token");
+    assert_eq!(record.opened_at, 1010);
+    assert_eq!(record.closed_at, 1020);
+    assert_eq!(record.reason, "take_profit");
+    assert!(record.pnl_lamports > 0);
+    assert!(record.pnl_percent > 49.9);
+}
