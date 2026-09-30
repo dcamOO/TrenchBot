@@ -34,6 +34,8 @@ As regras das histórias 2, 4 e 7 estão disponíveis em `src/trading`, com conf
 
 ```sh
 cargo test
+# Demonstração completa ponta a ponta (US4, US5, US6, US7, US8):
+cargo run -- --demo
 cargo run -- --paper examples/trading.json examples/events.jsonl
 # Exportar relatório de PnL em CSV (US8):
 cargo run -- --export-pnl examples/trading.json examples/events.jsonl pnl_relatorio.csv
@@ -56,6 +58,7 @@ npm --prefix frontend run dev
 
 * **Conexão com Carteira Phantom (US1):** Suporte à carteira Solana (Phantom) via `@solana/wallet-adapter` com saldo e endereço do investidor.
 * **Dashboard em Tempo Real (US3):** Visualização reativa com cards de PnL e Win Rate, tabela de tokens monitorados com status de criador (X/Y) e parecer de scam da IA Gemini, além de posições abertas com metas de TP e SL.
+* **Modo Demonstração Interativo:** Botão "▶ Iniciar Simulação" no painel para simular em tempo real a descoberta de tokens, análise da IA Gemini, compra e realização de Take-Profit (+50%).
 * **Exportação de PnL (US8):** Geração e download imediato do relatório de Lucro e Perda (CSV) diretamente pelo painel ou via CLI.
 
 O exemplo compra dois tokens, fecha um por take-profit e outro por stop-loss. A saída contém um resultado JSON por evento. Erros de evento/ordem são reportados e o processamento continua, permitindo avaliar saídas posteriores. Configuração inválida interrompe a inicialização. O saldo inicial simulado é 10 SOL, alterável por `PAPER_BALANCE_LAMPORTS` (inteiro).
