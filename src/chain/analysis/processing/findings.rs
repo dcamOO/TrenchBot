@@ -101,3 +101,258 @@ fn token_2022(
         }
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use solana_sdk::pubkey::Pubkey;
+    use crate::chain::info::JupiterInfo;
+
+    fn make_mint_info(
+        mint_authority: Option<Pubkey>,
+        freeze_authority: Option<Pubkey>,
+        extensions: Vec<String>,
+    ) -> MintInfo {
+        MintInfo {
+            decimals: 9,
+            supply: 1_000_000,
+            mint_authority,
+            freeze_authority,
+            token_program: Pubkey::default(),
+            extensions,
+        }
+    }
+
+    fn make_token_info(
+        mint_info: MintInfo,
+        metadata: Option<MetadataInfo>,
+    ) -> TokenInfo {
+        TokenInfo {
+            mint: Pubkey::default(),
+            ticker: "TEST".into(),
+            mint_info,
+            metadata,
+            jupiter: JupiterInfo {
+                price_usd: None,
+                liquidity: None,
+                market_cap_usd: None,
+                holder_count: None,
+                verified: None,
+                audit: None,
+                first_pool: None,
+                stats_5m: None,
+                stats_1h: None,
+                stats_6h: None,
+                stats_24h: None,
+            },
+        }
+    }
+
+    fn make_metadata(is_mutable: bool) -> MetadataInfo {
+        MetadataInfo {
+            name: "Test Token".into(),
+            symbol: "TEST".into(),
+            uri: String::new(),
+            update_authority: String::new(),
+            is_mutable,
+            creators: None,
+        }
+    }
+
+    fn count_category(
+        findings: &[Finding],
+        category: &FindingCategory,
+    ) -> usize {
+        findings
+            .iter()
+            .filter(|finding| {
+                matches!(
+                    (&finding.category, category),
+                    (FindingCategory::Authority, FindingCategory::Authority)
+                    | (FindingCategory::Metadata, FindingCategory::Metadata)
+                    | (FindingCategory::Token2022, FindingCategory::Token2022)
+                )
+            })
+            .count()
+    }
+
+    #[test]
+    fn no_authorities() {
+        let mint = make_mint_info(None, None, vec![]);
+        let info = make_token_info(mint, Some(make_metadata(false)));
+
+        let findings = collect(&info);
+
+        assert_eq!(
+            count_category(&findings, &FindingCategory::Authority),
+            0
+        );
+    }
+
+    #[test]
+    fn mint_authority_configured() {
+        let mint = make_mint_info(
+            Some(Pubkey::new_unique()),
+            None,
+            vec![],
+        );
+
+        let info = make_token_info(mint, Some(make_metadata(false)));
+
+        let findings = collect(&info);
+
+        assert_eq!(
+            count_category(&findings, &FindingCategory::Authority),
+            1
+        );
+
+        assert_eq!(
+            findings[0].message,
+            "Mint authority is configured."
+        );
+    }
+
+    #[test]
+    fn freeze_authority_configured() {
+        let mint = make_mint_info(
+            None,
+            Some(Pubkey::new_unique()),
+            vec![],
+        );
+
+        let info = make_token_info(mint, Some(make_metadata(false)));
+
+        let findings = collect(&info);
+
+        assert_eq!(
+            count_category(&findings, &FindingCategory::Authority),
+            1
+        );
+
+        assert_eq!(
+            findings[0].message,
+            "Freeze authority is configured."
+        );
+    }
+
+    #[test]
+    fn metadata_missing() {
+        let mint = make_mint_info(None, None, vec![]);
+        let info = make_token_info(mint, None);
+
+        let findings = collect(&info);
+
+        assert_eq!(
+            count_category(&findings, &FindingCategory::Metadata),
+            1
+        );
+
+        assert_eq!(
+            findings[0].message,
+            "No Metaplex metadata account was found."
+        );
+    }
+
+    #[test]
+    fn metadata_mutable() {
+        let mint = make_mint_info(None, None, vec![]);
+        let info = make_token_info(mint, Some(make_metadata(true)));
+
+        let findings = collect(&info);
+
+        assert_eq!(
+            count_category(&findings, &FindingCategory::Metadata),
+            1
+        );
+
+        assert_eq!(
+            findings[0].message,
+            "Metadata is mutable."
+        );
+    }
+
+    #[test]
+    fn metadata_immutable() {
+        let mint = make_mint_info(None, None, vec![]);
+        let info = make_token_info(mint, Some(make_metadata(false)));
+
+        let findings = collect(&info);
+
+        assert_eq!(
+            count_category(&findings, &FindingCategory::Metadata),
+            0
+        );
+    }
+
+    #[test]
+    fn known_extensions() {
+        let extensions = vec![
+            "PermanentDelegate".into(),
+            "TransferHook".into(),
+            "TransferFeeConfig".into(),
+            "Pausable".into(),
+        ];
+
+        let mint = make_mint_info(None, None, extensions);
+        let info = make_token_info(mint, Some(make_metadata(false)));
+
+        let findings = collect(&info);
+
+        assert_eq!(
+            count_category(&findings, &FindingCategory::Token2022),
+            4
+        );
+    }
+
+    #[test]
+    fn unknown_extension() {
+        let mint = make_mint_info(
+            None,
+            None,
+            vec!["UnknownExtension".into()],
+        );
+
+        let info = make_token_info(mint, Some(make_metadata(false)));
+
+        let findings = collect(&info);
+
+        assert_eq!(
+            count_category(&findings, &FindingCategory::Token2022),
+            0
+        );
+    }
+
+    #[test]
+    fn multiple_findings() {
+        let mint = make_mint_info(
+            Some(Pubkey::new_unique()),
+            Some(Pubkey::new_unique()),
+            vec![
+                "PermanentDelegate".into(),
+                "Pausable".into(),
+            ],
+        );
+
+        let info = make_token_info(mint, None);
+
+        let findings = collect(&info);
+
+        assert_eq!(findings.len(), 5);
+
+        assert_eq!(
+            count_category(&findings, &FindingCategory::Authority),
+            2
+        );
+
+        assert_eq!(
+            count_category(&findings, &FindingCategory::Metadata),
+            1
+        );
+
+        assert_eq!(
+            count_category(&findings, &FindingCategory::Token2022),
+            2
+        );
+    }
+}
