@@ -28,7 +28,7 @@ impl Asset {
 
         let mint = TokenMint::unpack(&account.data)?;
 
-        let extensions = self.get_extensions(
+        let extensions = get_extensions(
             &account.data,
             &account.owner,
         )?;
@@ -45,24 +45,58 @@ impl Asset {
             extensions,
         })
     }
+    
+}
 
-    fn get_extensions(
-        &self,
-        data: &[u8],
-        token_program: &Pubkey,
-    ) -> Result<Vec<String>> {
-        if *token_program != spl_token_2022_interface::id() {
-            return Ok(Vec::new());
-        }
+fn get_extensions(
+    data: &[u8],
+    token_program: &Pubkey,
+) -> Result<Vec<String>> {
+    if *token_program != spl_token_2022_interface::id() {
+        return Ok(Vec::new());
+    }
 
-        let state = StateWithExtensions::<TokenMint>::unpack(data)?;
+    let state = StateWithExtensions::<TokenMint>::unpack(data)?;
 
-        let extensions = state
-            .get_extension_types()?
-            .into_iter()
-            .map(|extension| format!("{extension:?}"))
-            .collect();
+    Ok(state
+        .get_extension_types()?
+        .into_iter()
+        .map(|extension| format!("{extension:?}"))
+        .collect())
+}
 
-        Ok(extensions)
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn classic_token_program_returns_empty_extensions() {
+        let data = vec![0u8; 10];
+        let token_program = Pubkey::default();
+
+
+        let extensions = get_extensions(&data, &token_program).unwrap();
+
+        assert!(extensions.is_empty());
+    }
+
+    #[test]
+    fn non_token_2022_program_ignores_account_data() {
+        let data = Vec::new();
+        let token_program = Pubkey::new_unique();
+
+        let extensions = get_extensions(&data, &token_program).unwrap();
+
+        assert!(extensions.is_empty());
+    }
+
+    #[test]
+    fn invalid_token_2022_data_returns_error() {
+        let data = vec![0u8; 10];
+        let token_program = spl_token_2022_interface::id();
+
+        let result = get_extensions(&data, &token_program);
+
+        assert!(result.is_err());
     }
 }
