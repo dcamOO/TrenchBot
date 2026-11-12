@@ -91,3 +91,7 @@ fn main() -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "token_analysis.rs"]
+mod token_analysis;
