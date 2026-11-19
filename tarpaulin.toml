@@ -1,0 +1,5 @@
+[default]
+engine = "Llvm"
+out = ["Html", "Stdout"]
+output-dir = "target/tarpaulin"
+skip-clean = true

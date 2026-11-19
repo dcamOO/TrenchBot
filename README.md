@@ -41,7 +41,11 @@ O **Trenchbot** é um agente autônomo de inteligência artificial projetado par
 As regras das histórias 2, 4 e 7 estão disponíveis em `src/trading`, com configuração JSON, replay local e descoberta ao vivo pelo WebSocket do PumpPortal. **As ordens são simuladas**: não conecta carteira nem envia swaps reais. Apenas lançamentos pump.fun são candidatos. O fluxo anterior de análise continua disponível ao executar sem argumentos.
 
 ```sh
+# Requer Rust >= 1.98.1 (dependências Solana); atualize com `rustup update stable`.
 cargo test
+# Cobertura de testes (relatório HTML em target/tarpaulin/tarpaulin-report.html):
+cargo install cargo-tarpaulin --locked
+cargo tarpaulin
 # Demonstração completa ponta a ponta (US4, US5, US6, US7, US8):
 cargo run -- --demo
 cargo run -- --paper examples/trading.json examples/events.jsonl
