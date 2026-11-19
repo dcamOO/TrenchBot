@@ -95,3 +95,86 @@ fn export_pnl_with_insufficient_balance_reports_errors_and_empty_report() {
     );
     assert_eq!(csv.lines().count(), 1);
 }
+
+#[test]
+fn export_pnl_rejects_invalid_balance_variable() {
+    let (out, csv) = export("nan", Some("muito"));
+    assert!(!out.status.success());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("PAPER_BALANCE_LAMPORTS"));
+    assert!(csv.is_empty());
+}
+
+#[test]
+fn export_pnl_requires_output_path() {
+    let dir = temp_dir("usage");
+    let out = trenchbot(&["--export-pnl", CONFIG, EVENTS], &dir, None);
+    assert!(!out.status.success());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("uso: TrenchBot --export-pnl"));
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn export_pnl_rejects_invalid_config() {
+    let dir = temp_dir("config");
+    let config = dir.join("bad.json");
+    std::fs::write(&config, r#"{"stop_loss_percent": 0}"#).unwrap();
+    let out = trenchbot(
+        &["--export-pnl", config.to_str().unwrap(), EVENTS, "x.csv"],
+        &dir,
+        None,
+    );
+    assert!(!out.status.success());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("configuração de trading inválida"));
+    assert!(!dir.join("x.csv").exists());
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn demo_flag_writes_report_in_working_directory() {
+    let dir = temp_dir("demo");
+    let out = trenchbot(&["--demo"], &dir, None);
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let csv = std::fs::read_to_string(dir.join("demo_pnl.csv")).unwrap();
+    assert!(csv.lines().nth(1).unwrap().ends_with(",50.00,take_profit"));
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn paper_flag_replays_events_without_report() {
+    let dir = temp_dir("paper");
+    let out = trenchbot(&["--paper", CONFIG, EVENTS], &dir, None);
+    assert!(out.status.success());
+    assert_eq!(actions(&out).len(), 5);
+    assert!(String::from_utf8_lossy(&out.stderr).contains("nenhuma transação real"));
+    assert_eq!(std::fs::read_dir(&dir).unwrap().count(), 0);
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn pump_paper_requires_api_key_before_connecting() {
+    let dir = temp_dir("pump");
+    let histories = concat!(env!("CARGO_MANIFEST_DIR"), "/examples/histories.json");
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_TrenchBot"));
+    let out = cmd
+        .args(["--pump-paper", CONFIG, histories])
+        .current_dir(&dir)
+        .env_remove("PUMPPORTAL_API_KEY")
+        .output()
+        .unwrap();
+    assert!(!out.status.success());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("PUMPPORTAL_API_KEY ausente"));
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn unknown_flag_prints_usage() {
+    let dir = temp_dir("unknown");
+    let out = trenchbot(&["--voar"], &dir, None);
+    assert!(!out.status.success());
+    assert!(String::from_utf8_lossy(&out.stderr).contains("uso: TrenchBot --paper"));
+    let _ = std::fs::remove_dir_all(dir);
+}
