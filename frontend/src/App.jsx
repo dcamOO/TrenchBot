@@ -6,6 +6,7 @@ import { MonitoredTokensTable } from './components/MonitoredTokensTable';
 import { ActivePositionsTable } from './components/ActivePositionsTable';
 import { PnlHistoryTable } from './components/PnlHistoryTable';
 import { useSimulationFeed } from './hooks/useSimulationFeed';
+import { buildPnlCsv, closePosition, computeMetrics } from './lib/dashboard';
 
 const INITIAL_CANDIDATES = [
   { mint: '7M9XbU5vK14q8sW93eRtYu23pLm', symbol: 'PEPE-PUMP', creator: '3aB8...9kLm', launchCount: 2, maxAllowed: 3, athProof: '$2.4M ATH', priceSol: 0.000045, ageSeconds: 14, aiStatus: 'safe' },
@@ -36,17 +37,10 @@ function Dashboard() {
     trades: INITIAL_TRADES,
   });
 
-  const totalPnlSol = trades.reduce((acc, t) => acc + t.pnlSol, 0);
-  const totalCost = trades.reduce((acc, t) => acc + t.costLamports, 0);
-  const totalPnlPercent = totalCost > 0 ? (trades.reduce((acc, t) => acc + t.pnlLamports, 0) / totalCost) * 100 : 0;
-  const wins = trades.filter((t) => t.pnlLamports > 0).length;
-  const winRate = trades.length > 0 ? (wins / trades.length) * 100 : 0;
+  const { totalPnlSol, totalPnlPercent, winRate } = computeMetrics(trades);
 
   const exportCsv = () => {
-    let csv = 'mint,opened_at,closed_at,cost_lamports,received_lamports,pnl_lamports,pnl_sol,pnl_percent,reason\n';
-    trades.forEach((t) => {
-      csv += `${t.mint},${t.openedAt},${t.closedAt},${t.costLamports},${t.receivedLamports},${t.pnlLamports},${t.pnlSol.toFixed(6)},${t.pnlPercent.toFixed(2)},${t.reason}\n`;
-    });
+    const csv = buildPnlCsv(trades);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -60,20 +54,7 @@ function Dashboard() {
   const handleManualExit = (mint) => {
     const pos = positions.find((p) => p.mint === mint);
     if (!pos) return;
-    const receivedLamports = Math.round(pos.quantity * pos.currentPriceSol * 1e9);
-    const pnlLamports = receivedLamports - pos.costLamports;
-    const newTrade = {
-      mint: pos.mint,
-      symbol: pos.symbol,
-      openedAt: Math.floor(Date.now() / 1000) - 60,
-      closedAt: Math.floor(Date.now() / 1000),
-      costLamports: pos.costLamports,
-      receivedLamports,
-      pnlLamports,
-      pnlSol: pnlLamports / 1e9,
-      pnlPercent: (pnlLamports / pos.costLamports) * 100,
-      reason: 'manual',
-    };
+    const newTrade = closePosition(pos, Math.floor(Date.now() / 1000));
     setTrades([newTrade, ...trades]);
     setPositions(positions.filter((p) => p.mint !== mint));
   };
