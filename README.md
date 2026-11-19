@@ -66,6 +66,9 @@ O painel de controle em React + Tailwind CSS está disponível em `frontend/`:
 ```sh
 npm --prefix frontend install
 npm --prefix frontend run dev
+# Testes de unidade (Vitest) e cobertura (relatório em frontend/coverage/):
+npm --prefix frontend test
+npm --prefix frontend run coverage
 ```
 
 * **Conexão com Carteira Phantom (US1):** Suporte à carteira Solana (Phantom) via `@solana/wallet-adapter` com saldo e endereço do investidor.
