@@ -36,6 +36,11 @@ describe('buildPnlCsv', () => {
     expect(lines[1]).toBe('WIN,100,200,100000000,150000000,50000000,0.050000,50.00,take_profit');
     expect(lines[2]).toBe('LOSS,300,400,100000000,80000000,-20000000,-0.020000,-20.00,stop_loss');
   });
+
+  it('quotes fields containing delimiters quotes or line breaks', () => {
+    const row = buildPnlCsv([{ ...win, mint: 'MI,NT', reason: 'say "hi"\nbye' }]).slice(PNL_CSV_HEADER.length + 1);
+    expect(row).toBe('"MI,NT",100,200,100000000,150000000,50000000,0.050000,50.00,"say ""hi""\nbye"\n');
+  });
 });
 
 describe('closePosition', () => {
