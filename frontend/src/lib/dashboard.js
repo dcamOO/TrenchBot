@@ -10,10 +10,15 @@ export function computeMetrics(trades) {
   return { totalPnlSol, totalPnlPercent, winRate };
 }
 
+function csvField(value) {
+  const text = String(value);
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
 export function buildPnlCsv(trades) {
   let csv = `${PNL_CSV_HEADER}\n`;
   trades.forEach((t) => {
-    csv += `${t.mint},${t.openedAt},${t.closedAt},${t.costLamports},${t.receivedLamports},${t.pnlLamports},${t.pnlSol.toFixed(6)},${t.pnlPercent.toFixed(2)},${t.reason}\n`;
+    csv += `${csvField(t.mint)},${t.openedAt},${t.closedAt},${t.costLamports},${t.receivedLamports},${t.pnlLamports},${t.pnlSol.toFixed(6)},${t.pnlPercent.toFixed(2)},${csvField(t.reason)}\n`;
   });
   return csv;
 }
