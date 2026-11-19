@@ -12,6 +12,8 @@ export function useSimulationFeed(initialData) {
   const [positions, setPositions] = useState(initialData.positions);
   const [trades, setTrades] = useState(initialData.trades);
   const stepRef = useRef(0);
+  const positionsRef = useRef(positions);
+  positionsRef.current = positions;
 
   const toggleSimulation = () => setIsSimulating((prev) => !prev);
 
@@ -49,27 +51,24 @@ export function useSimulationFeed(initialData) {
         setPositions((prev) => [newPos, ...prev]);
       } else if (stepPhase === 2) {
         // Fase 3: Preço sobe e atinge Take-Profit (+50%)
-        setPositions((prev) => {
-          const match = prev.find((p) => p.mint === streamItem.mint);
-          if (match) {
-            const receivedLamports = 150000000;
-            const newTrade = {
-              mint: match.mint,
-              symbol: match.symbol,
-              openedAt: Math.floor(Date.now() / 1000) - 30,
-              closedAt: Math.floor(Date.now() / 1000),
-              costLamports: match.costLamports,
-              receivedLamports,
-              pnlLamports: 50000000,
-              pnlSol: 0.05,
-              pnlPercent: 50.0,
-              reason: 'take_profit',
-            };
-            setTrades((t) => [newTrade, ...t]);
-            return prev.filter((p) => p.mint !== streamItem.mint);
-          }
-          return prev;
-        });
+        const match = positionsRef.current.find((p) => p.mint === streamItem.mint);
+        if (match) {
+          const receivedLamports = 150000000;
+          const newTrade = {
+            mint: match.mint,
+            symbol: match.symbol,
+            openedAt: Math.floor(Date.now() / 1000) - 30,
+            closedAt: Math.floor(Date.now() / 1000),
+            costLamports: match.costLamports,
+            receivedLamports,
+            pnlLamports: 50000000,
+            pnlSol: 0.05,
+            pnlPercent: 50.0,
+            reason: 'take_profit',
+          };
+          setTrades((t) => [newTrade, ...t]);
+          setPositions((prev) => prev.filter((p) => p.mint !== streamItem.mint));
+        }
       }
 
       stepRef.current += 1;
