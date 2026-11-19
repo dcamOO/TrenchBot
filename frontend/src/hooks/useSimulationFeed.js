@@ -19,7 +19,7 @@ export function useSimulationFeed(initialData) {
     if (!isSimulating) return;
 
     const interval = setInterval(() => {
-      const streamItem = MOCK_STREAM[stepRef.current % MOCK_STREAM.length];
+      const streamItem = MOCK_STREAM[Math.floor(stepRef.current / 3) % MOCK_STREAM.length];
       const stepPhase = stepRef.current % 3;
 
       if (stepPhase === 0) {
