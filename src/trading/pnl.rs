@@ -46,7 +46,7 @@ impl PnlRecord {
     pub fn to_csv_row(&self) -> String {
         format!(
             "{},{},{},{},{},{},{:.6},{:.2},{}",
-            self.mint,
+            csv_field(&self.mint),
             self.opened_at,
             self.closed_at,
             self.cost_lamports,
@@ -54,8 +54,17 @@ impl PnlRecord {
             self.pnl_lamports,
             self.pnl_sol,
             self.pnl_percent,
-            self.reason
+            csv_field(&self.reason)
         )
+    }
+}
+
+/// Quotes a field per RFC 4180 when it contains a delimiter, quote or line break.
+fn csv_field(value: &str) -> String {
+    if value.contains([',', '"', '\n', '\r']) {
+        format!("\"{}\"", value.replace('"', "\"\""))
+    } else {
+        value.to_string()
     }
 }
 
