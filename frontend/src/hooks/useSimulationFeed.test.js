@@ -11,7 +11,10 @@ function startFeed(initial = EMPTY) {
   return hook;
 }
 
-const tick = (n = 1) => act(() => vi.advanceTimersByTime(TICK * n));
+// One act per interval, so React renders between ticks as it does in the browser.
+const tick = (n = 1) => {
+  for (let i = 0; i < n; i += 1) act(() => vi.advanceTimersByTime(TICK));
+};
 
 describe('useSimulationFeed', () => {
   beforeEach(() => vi.useFakeTimers());
@@ -45,6 +48,13 @@ describe('useSimulationFeed', () => {
     expect(result.current.positions).toHaveLength(0);
     expect(result.current.trades).toHaveLength(1);
     expect(result.current.trades[0]).toMatchObject({ reason: 'take_profit', pnlLamports: 50000000, pnlPercent: 50 });
+  });
+
+  it('records a single trade per take profit under strict mode', () => {
+    const { result } = renderHook(() => useSimulationFeed(EMPTY), { reactStrictMode: true });
+    act(() => result.current.toggleSimulation());
+    tick(3);
+    expect(result.current.trades).toHaveLength(1);
   });
 
   it('moves to the next token only after a full cycle', () => {
