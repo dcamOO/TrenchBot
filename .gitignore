@@ -21,3 +21,4 @@ devenv.local.yaml
 devenv.lock
 devenv.nix
 devenv.yaml
+frontend/coverage/
