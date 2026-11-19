@@ -34,6 +34,17 @@ describe('PnlHistoryTable', () => {
     expect(within(lossRow).getByText('Stop-Loss')).toBeInTheDocument();
   });
 
+  it('labels manual exits as manual instead of stop loss', () => {
+    render(<PnlHistoryTable trades={[{ ...loss, reason: 'manual' }]} onExportCsv={vi.fn()} />);
+    expect(screen.getByText('Manual')).toBeInTheDocument();
+    expect(screen.queryByText('Stop-Loss')).not.toBeInTheDocument();
+  });
+
+  it('shows unknown reasons verbatim', () => {
+    render(<PnlHistoryTable trades={[{ ...loss, reason: 'expired' }]} onExportCsv={vi.fn()} />);
+    expect(screen.getByText('expired')).toBeInTheDocument();
+  });
+
   it('shortens the mint address', () => {
     render(<PnlHistoryTable trades={[win]} onExportCsv={vi.fn()} />);
     expect(screen.getByText('DEMO...0L1m')).toBeInTheDocument();
