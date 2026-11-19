@@ -20,3 +20,5 @@ mod risk;
 mod pnl;
 #[path = "trading/demo.rs"]
 mod demo;
+#[path = "trading/pnl_engine.rs"]
+mod pnl_engine;
