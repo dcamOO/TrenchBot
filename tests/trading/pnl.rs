@@ -70,3 +70,43 @@ fn engine_records_pnl_on_closed_trades() {
     assert!(record.pnl_lamports > 0);
     assert!(record.pnl_percent > 49.9);
 }
+
+#[test]
+fn zero_cost_yields_zero_percent() {
+    let record = PnlRecord::new("MINT".into(), 0, 1, 0, 50_000_000, "take_profit".into());
+    assert_eq!(record.pnl_lamports, 50_000_000);
+    assert_eq!(record.pnl_percent, 0.0);
+}
+
+#[test]
+fn breakeven_trade_has_no_pnl() {
+    let record = PnlRecord::new("MINT".into(), 0, 1, 100_000_000, 100_000_000, "manual".into());
+    assert_eq!(record.pnl_lamports, 0);
+    assert_eq!(record.pnl_sol, 0.0);
+    assert_eq!(record.pnl_percent, 0.0);
+}
+
+#[test]
+fn total_loss_is_minus_one_hundred_percent() {
+    let record = PnlRecord::new("MINT".into(), 0, 1, 100_000_000, 0, "stop_loss".into());
+    assert_eq!(record.pnl_lamports, -100_000_000);
+    assert!((record.pnl_sol - (-0.1)).abs() < 1e-9);
+    assert!((record.pnl_percent - (-100.0)).abs() < 1e-9);
+}
+
+#[test]
+fn empty_export_contains_only_header() {
+    let csv = export_csv(&[]);
+    assert_eq!(csv.lines().count(), 1);
+    assert!(csv.starts_with("mint,opened_at,closed_at,"));
+    assert!(csv.ends_with('\n'));
+}
+
+#[test]
+fn csv_row_rounds_sol_and_percent() {
+    let record = PnlRecord::new("MINT".into(), 10, 20, 300_000_000, 400_000_001, "take_profit".into());
+    assert_eq!(
+        record.to_csv_row(),
+        "MINT,10,20,300000000,400000001,100000001,0.100000,33.33,take_profit"
+    );
+}
