@@ -71,8 +71,13 @@ npm --prefix frontend test
 npm --prefix frontend run coverage
 # Teste E2E (Playwright): conectar carteira, simular trade até o take-profit e exportar o CSV.
 npx --prefix frontend playwright install chromium
-npm --prefix frontend run e2e
+npm --prefix frontend run e2e          # headless, com os passos US1/US3/US8 no terminal
+npm --prefix frontend run e2e:demo     # navegador visível em câmera lenta; grava vídeo e trace
+npm --prefix frontend run e2e:ui       # modo interativo com linha do tempo de cada passo
+npm --prefix frontend run e2e:report   # relatório HTML com passos, vídeo, trace e CSV exportado
 ```
+
+Os testes de integração ficam em `tests/cli.rs` (binário real: `--export-pnl`, `--demo`, `--paper` e erros de uso) e `frontend/src/App.test.jsx` (painel completo: carteira, feed simulado, saída manual e exportação).
 
 * **Conexão com Carteira Phantom (US1):** Suporte à carteira Solana (Phantom) via `@solana/wallet-adapter` com saldo e endereço do investidor.
 * **Dashboard em Tempo Real (US3):** Visualização reativa com cards de PnL e Win Rate, tabela de tokens monitorados com status de criador (X/Y) e parecer de scam da IA Gemini, além de posições abertas com metas de TP e SL.
