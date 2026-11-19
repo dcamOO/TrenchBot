@@ -5,6 +5,10 @@ use super::{
 use anyhow::Result;
 
 pub fn run_demo() -> Result<()> {
+    run_demo_to("demo_pnl.csv")
+}
+
+pub fn run_demo_to(output_path: &str) -> Result<()> {
     eprintln!("==================================================");
     eprintln!("🚀 TrenchBot - Demonstração Completa de Simulação");
     eprintln!("==================================================");
@@ -86,8 +90,8 @@ pub fn run_demo() -> Result<()> {
     }
 
     let csv = export_csv(engine.pnl_records());
-    std::fs::write("demo_pnl.csv", &csv)?;
-    eprintln!("\n✅ Demonstração concluída! Relatório salvo em demo_pnl.csv");
+    std::fs::write(output_path, &csv)?;
+    eprintln!("\n✅ Demonstração concluída! Relatório salvo em {output_path}");
     eprintln!("==================================================");
     Ok(())
 }
