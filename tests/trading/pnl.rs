@@ -110,3 +110,15 @@ fn csv_row_rounds_sol_and_percent() {
         "MINT,10,20,300000000,400000001,100000001,0.100000,33.33,take_profit"
     );
 }
+
+#[test]
+fn csv_quotes_fields_with_delimiters() {
+    let record = PnlRecord::new("MI,NT".into(), 1, 2, 100, 100, "say \"hi\"".into());
+    assert_eq!(record.to_csv_row(), "\"MI,NT\",1,2,100,100,0,0.000000,0.00,\"say \"\"hi\"\"\"");
+}
+
+#[test]
+fn csv_quotes_fields_with_line_breaks() {
+    let record = PnlRecord::new("MINT".into(), 1, 2, 100, 100, "a\nb".into());
+    assert!(export_csv(&[record]).ends_with(",\"a\nb\"\n"));
+}
