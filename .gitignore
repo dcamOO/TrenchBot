@@ -22,3 +22,5 @@ devenv.lock
 devenv.nix
 devenv.yaml
 frontend/coverage/
+frontend/test-results/
+frontend/playwright-report/
