@@ -1,5 +1,21 @@
 import React from 'react';
-import { Download, FileText, CheckCircle2, XCircle } from 'lucide-react';
+import { Download, FileText, CheckCircle2, XCircle, Hand } from 'lucide-react';
+
+const REASON_BADGES = {
+  take_profit: { label: 'Take-Profit', Icon: CheckCircle2, style: 'bg-emerald-950 text-emerald-300 border border-emerald-800', icon: 'text-emerald-400' },
+  stop_loss: { label: 'Stop-Loss', Icon: XCircle, style: 'bg-rose-950 text-rose-300 border border-rose-800', icon: 'text-rose-400' },
+  manual: { label: 'Manual', Icon: Hand, style: 'bg-slate-800 text-slate-300 border border-slate-700', icon: 'text-slate-400' },
+};
+
+const ReasonBadge = ({ reason }) => {
+  const { label, Icon, style, icon } = REASON_BADGES[reason] ?? { ...REASON_BADGES.manual, label: reason };
+  return (
+    <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] font-medium ${style}`}>
+      <Icon className={`w-3 h-3 ${icon}`} />
+      <span>{label}</span>
+    </span>
+  );
+};
 
 export const PnlHistoryTable = ({ trades, onExportCsv }) => {
   return (
@@ -64,23 +80,7 @@ export const PnlHistoryTable = ({ trades, onExportCsv }) => {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <span className={`inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[11px] font-medium ${
-                        t.reason === 'take_profit'
-                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                          : 'bg-rose-950 text-rose-300 border border-rose-800'
-                      }`}>
-                        {t.reason === 'take_profit' ? (
-                          <>
-                            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                            <span>Take-Profit</span>
-                          </>
-                        ) : (
-                          <>
-                            <XCircle className="w-3 h-3 text-rose-400" />
-                            <span>Stop-Loss</span>
-                          </>
-                        )}
-                      </span>
+                      <ReasonBadge reason={t.reason} />
                     </td>
                   </tr>
                 );
