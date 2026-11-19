@@ -14,7 +14,7 @@ const INITIAL_CANDIDATES = [
 ];
 
 const INITIAL_POSITIONS = [
-  { mint: '9zP3kL14m8sW92eRtYu34qLm21p', symbol: 'SOL-CAT', quantity: 2500000, costLamports: 100000000, currentPriceSol: 0.000052, unrealizedPnlSol: 0.0300, unrealizedPnlPercent: 30.0, tpPercent: 50.0, slPercent: 20.0 },
+  { mint: '9zP3kL14m8sW92eRtYu34qLm21p', symbol: 'SOL-CAT', quantity: 2500, costLamports: 100000000, currentPriceSol: 0.000052, unrealizedPnlSol: 0.0300, unrealizedPnlPercent: 30.0, tpPercent: 50.0, slPercent: 20.0 },
 ];
 
 const INITIAL_TRADES = [
